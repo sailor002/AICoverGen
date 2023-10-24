@@ -165,7 +165,9 @@ def display_progress(message, percent, is_webui, progress=None):
         print(message)
 
 
-def preprocess_song(song_input, mdx_model_params, is_webui, input_type, progress=None):
+def preprocess_song(song_input, song_id, mdx_model_params, is_webui, input_type, progress=None):
+    print("Starting song preprocess...")
+    
     keep_orig = False
 
     song_output_dir = os.path.join(output_dir, song_id)
@@ -250,20 +252,22 @@ def song_cover_pipeline(song_input, song_id, voice_model, pitch_change, keep_fil
         song_dir = os.path.join(output_dir, song_id)
             
         if not os.path.exists(song_dir):
+            print("Song dir does not exist. Will download and preprocess the song")
             display_progress('[~] Downloading song...', 0, is_webui, progress)
             song_link = song_input.split('&')[0]
             orig_song_path, _, duration = yt_download(song_link)
             if duration > max_video_duration:
                 error_msg = f'The Youtube video exceeds the max duration {max_duration}'
                 raise_exception(error_msg, 0)
-            orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, is_webui, input_type, progress)
+            orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, song_id, mdx_model_params, is_webui, input_type, progress)
         else:
+            print("Song dir exists. Will not download or preprocess the song")
             vocals_path, main_vocals_path = None, None
             paths = get_audio_paths(song_dir)
 
             # if any of the audio files aren't available or keep intermediate files, rerun preprocess
             if any(path is None for path in paths) or keep_files:
-                orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type, progress)
+                orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, song_id, mdx_model_params, song_id, is_webui, input_type, progress)
             else:
                 orig_song_path, instrumentals_path, main_vocals_dereverb_path, backup_vocals_path = paths
 
