@@ -165,20 +165,8 @@ def display_progress(message, percent, is_webui, progress=None):
         print(message)
 
 
-def preprocess_song(song_input, mdx_model_params, is_webui, input_type, max_video_duration, progress=None):
+def preprocess_song(song_input, mdx_model_params, is_webui, input_type, progress=None):
     keep_orig = False
-    if input_type == 'yt':
-        display_progress('[~] Downloading song...', 0, is_webui, progress)
-        song_link = song_input.split('&')[0]
-        orig_song_path, song_id, duration = yt_download(song_link)
-        if duration > max_video_duration:
-            error_msg = f'The Youtube video exceeds the max duration {max_duration}'
-            raise_exception(error_msg, 0)            
-    elif input_type == 'local':
-        orig_song_path = song_input
-        keep_orig = True
-    else:
-        orig_song_path = None
 
     song_output_dir = os.path.join(output_dir, song_id)
     if not os.path.exists(song_output_dir):
@@ -255,33 +243,19 @@ def song_cover_pipeline(song_input, voice_model, pitch_change, keep_files, max_v
         with open(os.path.join(mdxnet_models_dir, 'model_data.json')) as infile:
             mdx_model_params = json.load(infile)
 
-        # if youtube url
-        if urlparse(song_input).scheme == 'https':
-            input_type = 'yt'
-            #song_id = get_youtube_video_id(song_input)
-            #if song_id is None:
-            #    error_msg = 'Invalid YouTube url.'
-            #    raise_exception(error_msg, is_webui)
+        #Input type is always Youtube
+        input_type = 'yt'
 
-        # local audio file
-        else:
-            input_type = 'local'
-            song_input = song_input.strip('\"')
-            if os.path.exists(song_input):
-                song_id = get_hash(song_input)
-            else:
-                error_msg = f'{song_input} does not exist.'
-                song_id = None
-                raise_exception(error_msg, is_webui)
-
-        #song_dir = os.path.join(output_dir, song_id)
-
-        #if not os.path.exists(song_dir):
-        #    os.makedirs(song_dir)
-        
-        orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, is_webui, input_type, max_video_duration, progress)
-
-        """
+        display_progress('[~] Downloading song...', 0, is_webui, progress)
+        song_link = song_input.split('&')[0]
+        orig_song_path, song_id, duration = yt_download(song_link)
+        song_dir = os.path.join(output_dir, song_id)
+        if duration > max_video_duration:
+            error_msg = f'The Youtube video exceeds the max duration {max_duration}'
+            raise_exception(error_msg, 0)
+            
+        if not os.path.exists(song_dir):
+            orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, is_webui, input_type, progress)
         else:
             vocals_path, main_vocals_path = None, None
             paths = get_audio_paths(song_dir)
@@ -291,7 +265,6 @@ def song_cover_pipeline(song_input, voice_model, pitch_change, keep_files, max_v
                 orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type, progress)
             else:
                 orig_song_path, instrumentals_path, main_vocals_dereverb_path, backup_vocals_path = paths
-        """
 
         pitch_change = pitch_change * 12 + pitch_change_all
         ai_vocals_path = os.path.join(song_dir, f'{os.path.splitext(os.path.basename(orig_song_path))[0]}_{voice_model}_p{pitch_change}_i{index_rate}_fr{filter_radius}_rms{rms_mix_rate}_pro{protect}_{f0_method}{"" if f0_method != "mangio-crepe" else f"_{crepe_hop_length}"}.wav')
