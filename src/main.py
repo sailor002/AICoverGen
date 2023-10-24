@@ -171,6 +171,8 @@ def preprocess_song(song_input, mdx_model_params, is_webui, input_type, max_dura
         display_progress('[~] Downloading song...', 0, is_webui, progress)
         song_link = song_input.split('&')[0]
         orig_song_path, song_id, duration = yt_download(song_link)
+        print(f"duration: {duration}")
+        print(f"max_duration: {max_duration}")
         if duration > max_duration:
             error_msg = f'The Youtube video exceeds the max duration {max_duration}'
             raise_exception(error_msg, 0)            
