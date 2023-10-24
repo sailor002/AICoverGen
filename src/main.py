@@ -74,10 +74,8 @@ def yt_download(link):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         result = ydl.extract_info(link, download=True)
         download_path = ydl.prepare_filename(result, outtmpl='%(title)s.mp3')
-        duration = result.get('duration')
-        video_id = result.get('id')
 
-    return download_path, video_id, duration
+    return download_path
 
 
 def raise_exception(error_msg, is_webui):
@@ -165,15 +163,19 @@ def display_progress(message, percent, is_webui, progress=None):
         print(message)
 
 
-def preprocess_song(song_input, song_id, mdx_model_params, is_webui, input_type, progress=None):
-    print("Starting song preprocess...")
-    
+def preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type, progress=None):
     keep_orig = False
+    if input_type == 'yt':
+        display_progress('[~] Downloading song...', 0, is_webui, progress)
+        song_link = song_input.split('&')[0]
+        orig_song_path = yt_download(song_link)
+    elif input_type == 'local':
+        orig_song_path = song_input
+        keep_orig = True
+    else:
+        orig_song_path = None
 
     song_output_dir = os.path.join(output_dir, song_id)
-    if not os.path.exists(song_output_dir):
-        os.makedirs(song_output_dir)
-    
     orig_song_path = convert_to_stereo(orig_song_path)
 
     display_progress('[~] Separating Vocals from Instrumental...', 0.1, is_webui, progress)
@@ -231,7 +233,7 @@ def combine_audio(audio_paths, output_path, main_gain, backup_gain, inst_gain, o
     main_vocal_audio.overlay(backup_vocal_audio).overlay(instrumental_audio).export(output_path, format=output_format)
 
 
-def song_cover_pipeline(song_input, song_id, voice_model, pitch_change, keep_files, max_video_duration, 
+def song_cover_pipeline(song_input, song_id, voice_model, pitch_change, keep_files,
                         is_webui=0, main_gain=0, backup_gain=0, inst_gain=0, index_rate=0.5, filter_radius=3,
                         rms_mix_rate=0.25, f0_method='rmvpe', crepe_hop_length=128, protect=0.33, pitch_change_all=0,
                         reverb_rm_size=0.15, reverb_wet=0.2, reverb_dry=0.8, reverb_damping=0.7, output_format='mp3',
@@ -245,29 +247,22 @@ def song_cover_pipeline(song_input, song_id, voice_model, pitch_change, keep_fil
         with open(os.path.join(mdxnet_models_dir, 'model_data.json')) as infile:
             mdx_model_params = json.load(infile)
 
-        #Input type is always Youtube
+        # if youtube url
         input_type = 'yt'
 
-        #Song dir
         song_dir = os.path.join(output_dir, song_id)
-            
+
         if not os.path.exists(song_dir):
-            print("Song dir does not exist. Will download and preprocess the song")
-            display_progress('[~] Downloading song...', 0, is_webui, progress)
-            song_link = song_input.split('&')[0]
-            orig_song_path, _, duration = yt_download(song_link)
-            if duration > max_video_duration:
-                error_msg = f'The Youtube video exceeds the max duration {max_duration}'
-                raise_exception(error_msg, 0)
-            orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, song_id, mdx_model_params, is_webui, input_type, progress)
+            os.makedirs(song_dir)
+            orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type, progress)
+
         else:
-            print("Song dir exists. Will not download or preprocess the song")
             vocals_path, main_vocals_path = None, None
             paths = get_audio_paths(song_dir)
 
             # if any of the audio files aren't available or keep intermediate files, rerun preprocess
             if any(path is None for path in paths) or keep_files:
-                orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, song_id, mdx_model_params, song_id, is_webui, input_type, progress)
+                orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type, progress)
             else:
                 orig_song_path, instrumentals_path, main_vocals_dereverb_path, backup_vocals_path = paths
 
@@ -304,7 +299,7 @@ def song_cover_pipeline(song_input, song_id, voice_model, pitch_change, keep_fil
     except Exception as e:
         raise_exception(str(e), is_webui)
 
-"""
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate a AI cover song in the song_output/id directory.', add_help=True)
     parser.add_argument('-i', '--song-input', type=str, required=True, help='Link to a YouTube video or the filepath to a local mp3/wav file to create an AI cover of')
@@ -342,4 +337,3 @@ if __name__ == '__main__':
                                      reverb_dry=args.reverb_dryness, reverb_damping=args.reverb_damping,
                                      output_format=args.output_format)
     print(f'[+] Cover generated at {cover_path}')
-"""
