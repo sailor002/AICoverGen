@@ -74,8 +74,10 @@ def yt_download(link):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         result = ydl.extract_info(link, download=True)
         download_path = ydl.prepare_filename(result, outtmpl='%(title)s.mp3')
+        duration = result.get('duration')
+        video_id = result.get('id')
 
-    return download_path
+    return download_path, video_id, duration
 
 
 def raise_exception(error_msg, is_webui):
@@ -163,12 +165,15 @@ def display_progress(message, percent, is_webui, progress=None):
         print(message)
 
 
-def preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type, progress=None):
+def preprocess_song(song_input, mdx_model_params, is_webui, input_type, max_duration=400, progress=None):
     keep_orig = False
     if input_type == 'yt':
         display_progress('[~] Downloading song...', 0, is_webui, progress)
         song_link = song_input.split('&')[0]
-        orig_song_path = yt_download(song_link)
+        orig_song_path, song_id, duration = yt_download(song_link)
+        if duration > max_duration:
+            error_msg = f'The Youtube video exceeds the max duration {max_duration}'
+            raise_exception(error_msg, 0)            
     elif input_type == 'local':
         orig_song_path = song_input
         keep_orig = True
@@ -176,6 +181,9 @@ def preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type,
         orig_song_path = None
 
     song_output_dir = os.path.join(output_dir, song_id)
+    if not os.path.exists(song_output_dir):
+        os.makedirs(song_output_dir)
+    
     orig_song_path = convert_to_stereo(orig_song_path)
 
     display_progress('[~] Separating Vocals from Instrumental...', 0.1, is_webui, progress)
@@ -250,10 +258,10 @@ def song_cover_pipeline(song_input, voice_model, pitch_change, keep_files,
         # if youtube url
         if urlparse(song_input).scheme == 'https':
             input_type = 'yt'
-            song_id = get_youtube_video_id(song_input)
-            if song_id is None:
-                error_msg = 'Invalid YouTube url.'
-                raise_exception(error_msg, is_webui)
+            #song_id = get_youtube_video_id(song_input)
+            #if song_id is None:
+            #    error_msg = 'Invalid YouTube url.'
+            #    raise_exception(error_msg, is_webui)
 
         # local audio file
         else:
@@ -266,11 +274,11 @@ def song_cover_pipeline(song_input, voice_model, pitch_change, keep_files,
                 song_id = None
                 raise_exception(error_msg, is_webui)
 
-        song_dir = os.path.join(output_dir, song_id)
+        #song_dir = os.path.join(output_dir, song_id)
 
-        if not os.path.exists(song_dir):
-            os.makedirs(song_dir)
-            orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, song_id, is_webui, input_type, progress)
+        #if not os.path.exists(song_dir):
+        #    os.makedirs(song_dir)
+        orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, is_webui, input_type, progress)
 
         else:
             vocals_path, main_vocals_path = None, None
