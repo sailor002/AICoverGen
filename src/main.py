@@ -304,7 +304,7 @@ def song_cover_pipeline(song_input, song_id, voice_model, pitch_change, keep_fil
     except Exception as e:
         raise_exception(str(e), is_webui)
 
-
+"""
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate a AI cover song in the song_output/id directory.', add_help=True)
     parser.add_argument('-i', '--song-input', type=str, required=True, help='Link to a YouTube video or the filepath to a local mp3/wav file to create an AI cover of')
@@ -342,3 +342,4 @@ if __name__ == '__main__':
                                      reverb_dry=args.reverb_dryness, reverb_damping=args.reverb_damping,
                                      output_format=args.output_format)
     print(f'[+] Cover generated at {cover_path}')
+"""
