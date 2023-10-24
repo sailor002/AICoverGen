@@ -165,15 +165,13 @@ def display_progress(message, percent, is_webui, progress=None):
         print(message)
 
 
-def preprocess_song(song_input, mdx_model_params, is_webui, input_type, max_duration=400, progress=None):
+def preprocess_song(song_input, mdx_model_params, is_webui, input_type, max_video_duration=400, progress=None):
     keep_orig = False
     if input_type == 'yt':
         display_progress('[~] Downloading song...', 0, is_webui, progress)
         song_link = song_input.split('&')[0]
         orig_song_path, song_id, duration = yt_download(song_link)
-        print(f"duration: {duration}")
-        print(f"max_duration: {max_duration}")
-        if duration > max_duration:
+        if duration > max_video_duration:
             error_msg = f'The Youtube video exceeds the max duration {max_duration}'
             raise_exception(error_msg, 0)            
     elif input_type == 'local':
