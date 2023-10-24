@@ -229,7 +229,7 @@ def combine_audio(audio_paths, output_path, main_gain, backup_gain, inst_gain, o
     main_vocal_audio.overlay(backup_vocal_audio).overlay(instrumental_audio).export(output_path, format=output_format)
 
 
-def song_cover_pipeline(song_input, voice_model, pitch_change, keep_files, max_video_duration, 
+def song_cover_pipeline(song_input, song_id, voice_model, pitch_change, keep_files, max_video_duration, 
                         is_webui=0, main_gain=0, backup_gain=0, inst_gain=0, index_rate=0.5, filter_radius=3,
                         rms_mix_rate=0.25, f0_method='rmvpe', crepe_hop_length=128, protect=0.33, pitch_change_all=0,
                         reverb_rm_size=0.15, reverb_wet=0.2, reverb_dry=0.8, reverb_damping=0.7, output_format='mp3',
@@ -246,15 +246,16 @@ def song_cover_pipeline(song_input, voice_model, pitch_change, keep_files, max_v
         #Input type is always Youtube
         input_type = 'yt'
 
-        display_progress('[~] Downloading song...', 0, is_webui, progress)
-        song_link = song_input.split('&')[0]
-        orig_song_path, song_id, duration = yt_download(song_link)
+        #Song dir
         song_dir = os.path.join(output_dir, song_id)
-        if duration > max_video_duration:
-            error_msg = f'The Youtube video exceeds the max duration {max_duration}'
-            raise_exception(error_msg, 0)
             
         if not os.path.exists(song_dir):
+            display_progress('[~] Downloading song...', 0, is_webui, progress)
+            song_link = song_input.split('&')[0]
+            orig_song_path, _, duration = yt_download(song_link)
+            if duration > max_video_duration:
+                error_msg = f'The Youtube video exceeds the max duration {max_duration}'
+                raise_exception(error_msg, 0)
             orig_song_path, vocals_path, instrumentals_path, main_vocals_path, backup_vocals_path, main_vocals_dereverb_path = preprocess_song(song_input, mdx_model_params, is_webui, input_type, progress)
         else:
             vocals_path, main_vocals_path = None, None
