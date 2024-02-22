@@ -12,7 +12,8 @@ rvc_models_dir = f'{RUNPOD_VOLUME_DIR}/rvc_models'
 
 
 def dl_model(link, model_name, dir_name):
-    model_path = dir_name / model_name
+    model_path = os.path.join(dir_name, model_name)
+    #model_path = dir_name / model_name
     
     if model_path.exists():
         #print(f"Model '{model_name}' already exists in directory '{dir_name}'. Skipping download.")
