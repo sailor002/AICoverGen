@@ -16,7 +16,7 @@ def dl_model(link, model_name, dir_name):
     #model_path = dir_name / model_name
     
     if model_path.exists():
-        #print(f"Model '{model_name}' already exists in directory '{dir_name}'. Skipping download.")
+        print(f"Model '{model_name}' already exists in directory '{dir_name}'. Skipping download.")
         return
 
     with requests.get(f'{link}{model_name}') as r:
