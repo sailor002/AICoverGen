@@ -6,9 +6,8 @@ MDX_DOWNLOAD_LINK = 'https://github.com/TRvlvr/model_repo/releases/download/all_
 RVC_DOWNLOAD_LINK = 'https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/'
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-RUNPOD_VOLUME_DIR = '/runpod-volume'
-mdxnet_models_dir = f'{RUNPOD_VOLUME_DIR}/mdxnet_models'
-rvc_models_dir = f'{RUNPOD_VOLUME_DIR}/rvc_models'
+mdxnet_models_dir = f'{BASE_DIR}/mdxnet_models'
+rvc_models_dir = f'{BASE_DIR}/rvc_models'
 
 
 def dl_model(link, model_name, dir_name):
