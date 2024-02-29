@@ -22,10 +22,9 @@ from mdx import run_mdx
 from rvc import Config, load_hubert, get_vc, rvc_infer
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RUNPOD_VOLUME_DIR = '/runpod-volume'
 
-mdxnet_models_dir = os.path.join(RUNPOD_VOLUME_DIR, 'mdxnet_models')
-rvc_models_dir = os.path.join(RUNPOD_VOLUME_DIR, 'rvc_models')
+mdxnet_models_dir = os.path.join(BASE_DIR, 'mdxnet_models')
+rvc_models_dir = os.path.join(BASE_DIR, 'rvc_models')
 output_dir = os.path.join(BASE_DIR, 'song_output')
 
 
